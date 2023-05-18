@@ -1,0 +1,64 @@
+name: Tests
+on:
+  push:
+    branches:
+     - '**'
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        tarantool:
+          - "1.10"
+          - "2.2"
+          - "2.3"
+          - "2.4"
+          - "2.5"
+          - "2.6"
+          - "2.7"
+          - "2.8"
+        cartridge:
+          - "1.2.0"
+          - "2.1.2"
+          - "2.4.0"
+          - "2.5.1"
+          - "2.6.0"
+          - "2.7.8"
+        metrics:
+          - "scm-1"
+        include:
+          - tarantool: "2.x-latest"
+            cartridge: "2.7.8"
+            metrics: "scm-1"
+          - tarantool: "2.10"
+            cartridge: "2.7.8"
+            metrics: "scm-1"
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: tarantool/setup-tarantool@v2
+        if: matrix.tarantool != '2.x-latest'
+        with:
+          tarantool-version: ${{ matrix.tarantool }}
+
+      - name: Install latest pre-release Tarantool 2.x
+        if: matrix.tarantool == '2.x-latest'
+        run: |
+          curl -L https://tarantool.io/pre-release/2/installer.sh | bash
+          sudo apt-get -y install tarantool
+
+      # Stop Mono server. This server starts and listens to 8084 port that is
+      # used for tests.
+      - name: 'Stop Mono server'
+        run: sudo kill -9 $(sudo lsof -t -i tcp:8084) || true
+
+      - name: lint
+        run: make lint
+        env:
+          CARTRIDGE_VERSION: ${{ matrix.cartridge }}
+          METRICS_VERSION: ${{ matrix.metrics }}
+
+      - name: test
+        run: make test_with_coverage_report
+
