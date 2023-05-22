@@ -8,15 +8,14 @@ source  = {
 
 description = {
     summary     = "A role for collecting metrics in Tarantool Cartridge",
-    homepage    = '',
+    homepage    = 'https://www.tarantool.io/en/doc/latest/book/monitoring/',
     license     = 'BSD',
     maintainer  = "Igor Zolotarev <yngvar.antonsson@gmail.com>";
 }
 
 dependencies = {
     'lua >= 5.1',
-    'checks >= 2.0.0',
-    'metrics > 0.17.0',
+    'metrics >= 1.0.0',
 }
 
 build = {
