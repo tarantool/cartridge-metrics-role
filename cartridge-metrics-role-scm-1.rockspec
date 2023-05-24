@@ -15,8 +15,7 @@ description = {
 
 dependencies = {
     'lua >= 5.1',
-    'checks >= 2.0.0',
-    'metrics > 0.17.0',
+    'metrics >= 1.0.0',
 }
 
 build = {
