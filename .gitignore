@@ -1,6 +1,7 @@
 build
 513
 .rocks
+.idea/
 *.snap
 *.xlog
 *.vylog
