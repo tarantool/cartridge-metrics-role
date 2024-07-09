@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  test-old: # This job is for testing on Tarantool <= 2.8 and Cartridge <= 2.7.9
     if: |
       github.event_name == 'push' ||
       github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
@@ -33,112 +33,58 @@ jobs:
         metrics:
           - "1.0.0"
           - "1.1.0"
-        include:
-          # 1.10
-          - tarantool: "1.10"
-            cartridge: "2.8.6"
-            metrics: "1.0.0"
-          - tarantool: "1.10"
-            cartridge: "2.8.6"
-            metrics: "1.1.0"
-          - tarantool: "1.10"
-            cartridge: "2.9.0"
-            metrics: "1.0.0"
-          - tarantool: "1.10"
-            cartridge: "2.9.0"
-            metrics: "1.1.0"
-          - tarantool: "1.10"
-            cartridge: "2.10.0"
-            metrics: "1.0.0"
-          - tarantool: "1.10"
-            cartridge: "2.10.0"
-            metrics: "1.1.0"
-          - tarantool: "1.10"
-            cartridge: "2.11.0"
-            metrics: "1.0.0"
-          - tarantool: "1.10"
-            cartridge: "2.11.0"
-            metrics: "1.1.0"
-          - tarantool: "1.10"
-            cartridge: "2.12.1"
-            metrics: "1.0.0"
-          - tarantool: "1.10"
-            cartridge: "2.12.1"
-            metrics: "1.1.0"
-          # 2.10
-          - tarantool: "2.10"
-            cartridge: "2.7.9"
-            metrics: "1.0.0"
-          - tarantool: "2.10"
-            cartridge: "2.7.9"
-            metrics: "1.1.0"
-          - tarantool: "2.10"
-            cartridge: "2.8.6"
-            metrics: "1.0.0"
-          - tarantool: "2.10"
-            cartridge: "2.8.6"
-            metrics: "1.1.0"
-          - tarantool: "2.10"
-            cartridge: "2.9.0"
-            metrics: "1.0.0"
-          - tarantool: "2.10"
-            cartridge: "2.9.0"
-            metrics: "1.1.0"
-          - tarantool: "2.10"
-            cartridge: "2.10.0"
-            metrics: "1.0.0"
-          - tarantool: "2.10"
-            cartridge: "2.10.0"
-            metrics: "1.1.0"
-          - tarantool: "2.10"
-            cartridge: "2.11.0"
-            metrics: "1.0.0"
-          - tarantool: "2.10"
-            cartridge: "2.11.0"
-            metrics: "1.1.0"
-          - tarantool: "2.10"
-            cartridge: "2.12.1"
-            metrics: "1.0.0"
-          - tarantool: "2.10"
-            cartridge: "2.12.1"
-            metrics: "1.1.0"
-          # 2.11
-          - tarantool: "2.11"
-            cartridge: "2.7.9"
-            metrics: "1.0.0"
-          - tarantool: "2.11"
-            cartridge: "2.7.9"
-            metrics: "1.1.0"
-          - tarantool: "2.11"
-            cartridge: "2.8.6"
-            metrics: "1.0.0"
-          - tarantool: "2.11"
-            cartridge: "2.8.6"
-            metrics: "1.1.0"
-          - tarantool: "2.11"
-            cartridge: "2.9.0"
-            metrics: "1.0.0"
-          - tarantool: "2.11"
-            cartridge: "2.9.0"
-            metrics: "1.1.0"
-          - tarantool: "2.11"
-            cartridge: "2.10.0"
-            metrics: "1.0.0"
-          - tarantool: "2.11"
-            cartridge: "2.10.0"
-            metrics: "1.1.0"
-          - tarantool: "2.11"
-            cartridge: "2.11.0"
-            metrics: "1.0.0"
-          - tarantool: "2.11"
-            cartridge: "2.11.0"
-            metrics: "1.1.0"
-          - tarantool: "2.11"
-            cartridge: "2.12.1"
-            metrics: "1.0.0"
-          - tarantool: "2.11"
-            cartridge: "2.12.1"
-            metrics: "1.1.0"
+          - "1.2.0"
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: tarantool/setup-tarantool@v2
+        if: matrix.tarantool != '2.x-latest'
+        with:
+          tarantool-version: ${{ matrix.tarantool }}
+
+      - name: Install latest pre-release Tarantool 2.x
+        if: matrix.tarantool == '2.x-latest'
+        run: |
+          curl -L https://tarantool.io/pre-release/2/installer.sh | bash
+          sudo apt-get -y install tarantool
+
+      # Stop Mono server. This server starts and listens to 8084 port that is
+      # used for tests.
+      - name: 'Stop Mono server'
+        run: sudo kill -9 $(sudo lsof -t -i tcp:8084) || true
+
+      - name: lint
+        run: make lint
+        env:
+          CARTRIDGE_VERSION: ${{ matrix.cartridge }}
+          METRICS_VERSION: ${{ matrix.metrics }}
+
+      - name: test
+        run: make test_with_coverage_report
+
+  test-new: # This job is for testing on Tarantool >= 2.10 and Cartridge >= 2.8
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+
+    strategy:
+      fail-fast: false
+      matrix:
+        tarantool:
+          - "1.10"
+          - "2.10"
+          - "2.11"
+        cartridge:
+          - "2.8.6"
+          - "2.9.0"
+          - "2.10.0"
+          - "2.11.0"
+          - "2.12.2"
+        metrics:
+          - "1.0.0"
+          - "1.1.0"
+          - "1.2.0"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
