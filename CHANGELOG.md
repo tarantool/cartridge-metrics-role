@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.1.2] - 2025-10-22
+
 ### Changed
 
 - Bump CMake version to avoid compatibility problem with CMake 4.x .
