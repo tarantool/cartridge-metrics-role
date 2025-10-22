@@ -1,12 +1,12 @@
 TTCTL := tt
 ifeq (,$(shell which tt 2>/dev/null))
-	TTCTL := tarantoolctl
+	TTCTL := tt
 endif
 
 .rocks: cartridge-metrics-role-scm-1.rockspec
 	$(TTCTL) rocks install luatest # master newer than 0.5.7 required
 	$(TTCTL) rocks install luacov 0.13.0
-	$(TTCTL) rocks install luacheck 0.26.0
+	$(TTCTL) rocks install luacheck
 	$(TTCTL) rocks install cartridge $(CARTRIDGE_VERSION); \
 	$(TTCTL) rocks install metrics $(METRICS_VERSION);
 	$(TTCTL) rocks make
