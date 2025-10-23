@@ -6,64 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test-old: # This job is for testing on Tarantool <= 2.8 and Cartridge <= 2.7.9
-    if: |
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
-
-    strategy:
-      fail-fast: false
-      matrix:
-        tarantool:
-          - "1.10"
-          - "2.2"
-          - "2.3"
-          - "2.4"
-          - "2.5"
-          - "2.6"
-          - "2.7"
-          - "2.8"
-        cartridge:
-          - "1.2.0"
-          - "2.1.2"
-          - "2.4.0"
-          - "2.5.1"
-          - "2.6.0"
-          - "2.7.9"
-        metrics:
-          - "1.0.0"
-          - "1.1.0"
-          - "1.2.0"
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: tarantool/setup-tarantool@v2
-        if: matrix.tarantool != '2.x-latest'
-        with:
-          tarantool-version: ${{ matrix.tarantool }}
-
-      - name: Install latest pre-release Tarantool 2.x
-        if: matrix.tarantool == '2.x-latest'
-        run: |
-          curl -L https://tarantool.io/pre-release/2/installer.sh | bash
-          sudo apt-get -y install tarantool
-
-      # Stop Mono server. This server starts and listens to 8084 port that is
-      # used for tests.
-      - name: 'Stop Mono server'
-        run: sudo kill -9 $(sudo lsof -t -i tcp:8084) || true
-
-      - name: lint
-        run: make lint
-        env:
-          CARTRIDGE_VERSION: ${{ matrix.cartridge }}
-          METRICS_VERSION: ${{ matrix.metrics }}
-
-      - name: test
-        run: make test_with_coverage_report
-
-  test-new: # This job is for testing on Tarantool >= 2.10 and Cartridge >= 2.8
+  test:
     if: |
       github.event_name == 'push' ||
       github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
@@ -82,24 +25,26 @@ jobs:
           - "2.11.0"
           - "2.12.4"
           - "2.13.0"
+          - "2.16.4"
         metrics:
           - "1.0.0"
           - "1.1.0"
           - "1.2.0"
-    runs-on: ubuntu-20.04
+          - "1.6.1"
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: tarantool/setup-tarantool@v2
+      - uses: tarantool/setup-tarantool@v3
         if: matrix.tarantool != '2.x-latest'
         with:
           tarantool-version: ${{ matrix.tarantool }}
 
-      - name: Install latest pre-release Tarantool 2.x
-        if: matrix.tarantool == '2.x-latest'
+      - name: Setup tt
         run: |
-          curl -L https://tarantool.io/pre-release/2/installer.sh | bash
-          sudo apt-get -y install tarantool
+          curl -L https://tarantool.io/release/2/installer.sh | sudo bash
+          sudo apt install -y tt
+          tt version
 
       # Stop Mono server. This server starts and listens to 8084 port that is
       # used for tests.
